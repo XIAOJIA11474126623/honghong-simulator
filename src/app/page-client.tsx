@@ -77,7 +77,7 @@ export default function HomePageClient() {
       <main className="max-w-4xl mx-auto flex-1 p-6 flex flex-col items-center justify-center gap-10">
         {/* Hero Section */}
         <div className="text-center space-y-3">
-          <h1 className="text-4xl font-bold text-foreground tracking-tight">
+          <h1 className="text-4xl font-bold tracking-tight" style={{ color: '#C96F3D' }}>
             哄哄模拟器
           </h1>
           <p className="text-lg text-muted-foreground">
