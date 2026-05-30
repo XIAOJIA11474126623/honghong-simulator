@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色 === */
+      --color-primary:              #C96F3D;
+      --color-primary-container:    #F5E0D0;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面 === */
+      --color-background:                 #FBF3E7;
+      --color-surface-container-lowest:   #FFF9F1;
+      --color-surface:                    #FFF9F1;
+      --color-surface-container:          #F3E8D8;
+      --color-surface-container-high:     #EDDFCF;
+      --color-surface-container-highest:  #E6D5C0;
+      /* === 文字 === */
+      --color-on-surface:           #31251B;
+      --color-on-surface-variant:   #8B7662;
+      /* === 功能色 === */
+      --color-success:  #7E9F7A;
+      --color-error:    #D94F4F;
+      --color-warning:  #E8A84C;
+      /* === 边框 === */
+      --color-outline:          #C4B5A2;
+      --color-outline-variant:  #D9CEBF;
+      /* === 圆角 === */
+      --radius-sm:   0.375rem;
+      --radius-md:   0.5rem;
+      --radius-lg:   0.75rem;
+      --radius-xl:   1rem;
+      --radius-2xl:  1.5rem;
+      --radius-full: 9999px;
+      /* === 阴影 === */
+      --shadow-card:   0 2px 8px rgba(49,37,27,0.08);
+      --shadow-float:  0 10px 25px rgba(49,37,27,0.10);
+      --shadow-dialog: 0 25px 50px rgba(49,37,27,0.15);
+      /* === 字体 === */
+      --font-sans: "Noto Sans SC", system-ui, sans-serif;
+    }
+  </style>
+
+  <style>
+    #game-page {
+      transition: background 0.8s ease;
+    }
+    .option-card {
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .option-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(49,37,27,0.12);
+    }
+    .option-card.selected {
+      border: 2px solid #C96F3D !important;
+      background: #F5E0D0 !important;
+    }
+    .score-feedback {
+      animation: floatUp 1.2s ease-out forwards;
+    }
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0); }
+      70% { opacity: 1; transform: translateY(-20px); }
+      100% { opacity: 0; transform: translateY(-30px); }
+    }
+    .mood-bubble {
+      animation: bubbleIn 0.4s ease-out;
+    }
+    @keyframes bubbleIn {
+      0% { opacity: 0; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .emoji-avatar {
+      transition: all 0.5s ease;
+    }
+    .low-score-tip {
+      animation: slideIn 0.4s ease-out;
+    }
+    @keyframes slideIn {
+      0% { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .progress-fill {
+      transition: width 0.5s ease;
+    }
+    .atmosphere-bar {
+      transition: all 0.5s ease;
+    }
+  </style>
+
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <!-- @main-content:start -->
+  <main id="game-page" class="min-h-screen flex flex-col p-4 md:p-6" style="background: linear-gradient(180deg, #FBF3E7 0%, #F5E6D0 100%);">
+
+    <!-- 顶部进度条区域 -->
+    <section id="progress-section" class="w-full max-w-4xl mx-auto mb-4">
+      <div class="flex items-center justify-between mb-2">
+        <span id="progress-text" class="text-sm font-semibold text-on-surface-variant">第1题 / 共10题</span>
+        <span id="score-text" class="text-sm font-semibold text-primary">当前分数：0</span>
+      </div>
+      <div class="w-full h-2 bg-surface-container-high rounded-full overflow-hidden">
+        <div id="progress-bar" class="h-full bg-primary rounded-full progress-fill" style="width: 10%;"></div>
+      </div>
+    </section>
+
+    <!-- AI伴侣头像区域 -->
+    <section id="avatar-section" class="w-full max-w-4xl mx-auto flex flex-col items-center mb-4">
+      <div id="emoji-avatar" class="emoji-avatar text-7xl md:text-8xl mb-3">😊</div>
+      <div id="ai-bubble" class="mood-bubble bg-surface rounded-xl shadow-card px-5 py-3 max-w-md text-center relative">
+        <p id="ai-dialogue" class="text-sm text-on-surface leading-relaxed">哼，开始答题吧，看看你能不能哄好我~</p>
+        <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-surface rotate-45 shadow-card"></div>
+      </div>
+    </section>
+
+    <!-- 低分引导提示 -->
+    <div id="low-score-tip" class="w-full max-w-4xl mx-auto mb-3 hidden">
+      <div class="low-score-tip bg-warning/15 border border-warning/30 rounded-lg px-4 py-3 flex items-center gap-2">
+        <i data-lucide="lightbulb" class="w-4 h-4 text-warning shrink-0"></i>
+        <p class="text-sm text-on-surface">试试换个方式回应，TA可能需要的不是道理而是关心</p>
+      </div>
+    </div>
+
+    <!-- 题目区域 -->
+    <section id="question-section" class="w-full max-w-4xl mx-auto mb-4">
+      <div class="bg-surface rounded-xl shadow-card p-5 md:p-6">
+        <p id="question-text" class="text-base md:text-lg font-semibold text-on-surface leading-relaxed">她说"你自己倒"，你怎么办？</p>
+      </div>
+    </section>
+
+    <!-- 选项区域 -->
+    <section id="options-section" class="w-full max-w-4xl mx-auto mb-4 flex-1">
+      <div id="options-list" class="grid gap-3">
+        <!-- 选项A -->
+        <div id="option-A" class="option-card bg-surface rounded-xl shadow-card p-4 flex items-center gap-3 border-2 border-transparent" data-option="A" data-score="10">
+          <span class="shrink-0 w-8 h-8 rounded-full bg-primary/15 text-primary text-sm font-bold flex items-center justify-center">A</span>
+          <span class="option-text text-sm text-on-surface leading-relaxed">好的我自己来</span>
+          <span id="feedback-A" class="ml-auto text-sm font-bold text-success hidden"></span>
+        </div>
+        <!-- 选项B -->
+        <div id="option-B" class="option-card bg-surface rounded-xl shadow-card p-4 flex items-center gap-3 border-2 border-transparent" data-option="B" data-score="6">
+          <span class="shrink-0 w-8 h-8 rounded-full bg-primary/15 text-primary text-sm font-bold flex items-center justify-center">B</span>
+          <span class="option-text text-sm text-on-surface leading-relaxed">别生气了，我这就去倒</span>
+          <span id="feedback-B" class="ml-auto text-sm font-bold text-success hidden"></span>
+        </div>
+        <!-- 选项C -->
+        <div id="option-C" class="option-card bg-surface rounded-xl shadow-card p-4 flex items-center gap-3 border-2 border-transparent" data-option="C" data-score="2">
+          <span class="shrink-0 w-8 h-8 rounded-full bg-primary/15 text-primary text-sm font-bold flex items-center justify-center">C</span>
+          <span class="option-text text-sm text-on-surface leading-relaxed">你怎么不自己倒</span>
+          <span id="feedback-C" class="ml-auto text-sm font-bold text-success hidden"></span>
+        </div>
+        <!-- 选项D -->
+        <div id="option-D" class="option-card bg-surface rounded-xl shadow-card p-4 flex items-center gap-3 border-2 border-transparent" data-option="D" data-score="0">
+          <span class="shrink-0 w-8 h-8 rounded-full bg-primary/15 text-primary text-sm font-bold flex items-center justify-center">D</span>
+          <span class="option-text text-sm text-on-surface leading-relaxed">又怎么了</span>
+          <span id="feedback-D" class="ml-auto text-sm font-bold text-success hidden"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 底部总分和氛围条 -->
+    <section id="bottom-section" class="w-full max-w-4xl mx-auto">
+      <div class="bg-surface rounded-xl shadow-card p-4">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-medium text-on-surface-variant">总分</span>
+          <span id="total-score-display" class="text-lg font-bold text-primary">0 分</span>
+        </div>
+        <div class="w-full h-3 rounded-full overflow-hidden bg-surface-container">
+          <div id="atmosphere-bar" class="h-full rounded-full atmosphere-bar" style="width: 0%; background: linear-gradient(90deg, #D94F4F, #E8A84C, #7E9F7A);"></div>
+        </div>
+        <div class="flex items-center justify-between mt-1">
+          <span class="text-xs text-on-surface-variant">生气</span>
+          <span class="text-xs text-on-surface-variant">开心</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+  <!-- @main-content:end -->
+
+  <script>
+    $(function () {
+      // === 题目数据（硬编码10道题） ===
+      var questions = [
+        { q: '她说"你自己倒"，你怎么办？', options: { A: '好的我自己来', B: '别生气了，我这就去倒', C: '你怎么不自己倒', D: '又怎么了' } },
+        { q: '她开始不理你了，你怎么办？', options: { A: '默默陪在她旁边', B: '你到底怎么了', C: '算了不管了', D: '至于吗' } },
+        { q: '她说"我没事"，你怎么办？', options: { A: '抱抱她', B: '没事就好', C: '那继续看电视', D: '你每次都这样' } },
+        { q: '她开始翻旧账，你怎么办？', options: { A: '先听她说完再回应', B: '那都是以前的事了', C: '你能不能别翻旧账', D: '又来了' } },
+        { q: '她眼眶红了，你怎么办？', options: { A: '轻轻擦掉她的眼泪', B: '别哭了', C: '至于哭吗', D: '你这反应也太大了吧' } },
+        { q: '她说"你根本不爱我"，你怎么办？', options: { A: '我当然爱你，是我做得不够好', B: '我怎么不爱你了', C: '你说这话有意思吗', D: '行吧我不爱' } },
+        { q: '她开始收拾东西要走，你怎么办？', options: { A: '拉住她的手说别走', B: '你去哪', C: '你走试试', D: '随你便' } },
+        { q: '她闺蜜发消息安慰她，你怎么办？', options: { A: '给她们空间，等她气消一点再聊', B: '看什么消息给我看看', C: '你闺蜜管得也太宽了', D: '跟她闺蜜去诉苦吧' } },
+        { q: '她说"我们冷静一下"，你怎么办？', options: { A: '好，我就在旁边等你', B: '终于说句对的话', C: '早就该冷静了', D: '行吧你慢慢冷静' } },
+        { q: '最后她态度软化了，你怎么办？', options: { A: '认真说对不起并抱抱她', B: '看吧不就这点事', C: '以后别这样了', D: '终于完了' } }
+      ];
+
+      var scores = { A: 10, B: 6, C: 2, D: 0 };
+
+      // AI对话语气（按分数段）
+      var dialogues = {
+        0: ['你根本不在乎我吧？', '我真是对你太失望了...', '你心里根本没有我！', '你是故意的吧？'],
+        30: ['唉，你还是不懂我...', '你就不能换位想想吗？', '你真的知道我在想什么吗？', '算了我懒得说了...'],
+        50: ['嗯...还行吧', '你偶尔也能说对一次', '还有进步空间哦', '勉强及格吧...'],
+        70: ['这还差不多~', '你还是很懂我的嘛', '不错不错继续加油', '你有时候还是挺暖的'],
+        90: ['你好会哄我呀~', '果然最懂我的还是你', '被你暖到了！', '你真的太棒了！']
+      };
+
+      // 状态
+      var currentQuestion = 0;
+      var totalScore = 0;
+      var lowScoreStreak = 0;
+      var isAnswering = false;
+
+      // 获取emoji
+      function getEmoji(score) {
+        if (score <= 30) return '😠';
+        if (score <= 50) return '😐';
+        if (score <= 70) return '😊';
+        if (score <= 89) return '😄';
+        return '🥰';
+      }
+
+      // 获取分数段
+      function getScoreBracket(score) {
+        if (score <= 30) return 0;
+        if (score <= 50) return 30;
+        if (score <= 70) return 50;
+        if (score <= 89) return 70;
+        return 90;
+      }
+
+      // 获取随机对话
+      function getDialogue(score) {
+        var bracket = getScoreBracket(score);
+        var arr = dialogues[bracket];
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
+
+      // 获取背景渐变
+      function getBackground(score) {
+        if (score <= 30) return 'linear-gradient(180deg, #E8E0D8 0%, #D5CDC5 100%)';
+        if (score <= 50) return 'linear-gradient(180deg, #EDE5DA 0%, #E0D5C8 100%)';
+        if (score <= 70) return 'linear-gradient(180deg, #FBF3E7 0%, #F5E6D0 100%)';
+        if (score <= 89) return 'linear-gradient(180deg, #FBF0E0 0%, #F5DABB 100%)';
+        return 'linear-gradient(180deg, #FBF0DD 0%, #F5D0A8 100%)';
+      }
+
+      // 更新页面状态
+      function updatePage() {
+        var maxScore = (currentQuestion) * 10;
+        var percent = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+
+        // 进度
+        $('#progress-text').text('第' + (currentQuestion + 1) + '题 / 共10题');
+        $('#progress-bar').css('width', ((currentQuestion + 1) / 10 * 100) + '%');
+        $('#score-text').text('当前分数：' + totalScore);
+
+        // emoji和对话
+        $('#emoji-avatar').text(getEmoji(totalScore));
+        $('#ai-dialogue').text(getDialogue(totalScore));
+        $('#ai-bubble').removeClass('mood-bubble').addClass('mood-bubble');
+
+        // 背景
+        $('#game-page').css('background', getBackground(totalScore));
+
+        // 总分和氛围条
+        $('#total-score-display').text(totalScore + ' 分');
+        var atmospherePercent = Math.min(100, (totalScore / 100) * 100);
+        $('#atmosphere-bar').css('width', atmospherePercent + '%');
+
+        // 低分提示
+        if (lowScoreStreak >= 2) {
+          $('#low-score-tip').removeClass('hidden');
+        } else {
+          $('#low-score-tip').addClass('hidden');
+        }
+      }
+
+      // 渲染题目
+      function renderQuestion(index) {
+        var q = questions[index];
+        $('#question-text').text(q.q);
+
+        var optionKeys = ['A', 'B', 'C', 'D'];
+        for (var i = 0; i < optionKeys.length; i++) {
+          var key = optionKeys[i];
+          var $card = $('#option-' + key);
+          $card.removeClass('selected').css('pointer-events', 'auto');
+          $card.find('.option-text').text(q.options[key]);
+          $card.find('[id^="feedback-"]').addClass('hidden').text('');
+          $card.css('border-color', 'transparent');
+        }
+      }
+
+      // 选择选项
+      $('#options-list').on('click', '.option-card', function () {
+        if (isAnswering) return;
+        isAnswering = true;
+
+        var $this = $(this);
+        var option = $this.data('option');
+        var score = scores[option];
+        totalScore += score;
+
+        // 高亮选中项
+        $this.addClass('selected');
+
+        // 显示得分反馈
+        var feedbackText = '+' + score + '分';
+        var feedbackColor = score >= 6 ? 'text-success' : (score >= 2 ? 'text-warning' : 'text-error');
+        $('#feedback-' + option).removeClass('hidden text-success text-warning text-error').addClass(feedbackColor).text(feedbackText);
+
+        // 禁用其他选项
+        $('.option-card').not($this).css('opacity', '0.5').css('pointer-events', 'none');
+
+        // 低分连续计数
+        if (score <= 2) {
+          lowScoreStreak++;
+        } else {
+          lowScoreStreak = 0;
+        }
+
+        // 更新页面
+        updatePage();
+
+        // 延迟后进入下一题
+        setTimeout(function () {
+          currentQuestion++;
+          if (currentQuestion >= 10) {
+            // 答完跳转结果页
+            window.location.href = 'result.html?score=' + totalScore;
+          } else {
+            // 重置选项状态
+            $('.option-card').css('opacity', '1').css('pointer-events', 'auto');
+            renderQuestion(currentQuestion);
+            updatePage();
+            isAnswering = false;
+          }
+        }, 1200);
+      });
+
+      // 初始渲染
+      renderQuestion(0);
+      updatePage();
+    });
+  </script>
+
+  <script>lucide.createIcons();</script>
+</body>
+
+</html>

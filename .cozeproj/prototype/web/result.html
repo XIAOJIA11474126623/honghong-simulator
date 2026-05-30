@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色 === */
+      --color-primary:              #C96F3D;
+      --color-primary-container:    #F5E0D0;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面 === */
+      --color-background:                 #FBF3E7;
+      --color-surface-container-lowest:   #FFF9F1;
+      --color-surface:                    #FFF9F1;
+      --color-surface-container:          #F3E8D8;
+      --color-surface-container-high:     #EDDFCF;
+      --color-surface-container-highest:  #E6D5C0;
+      /* === 文字 === */
+      --color-on-surface:           #31251B;
+      --color-on-surface-variant:   #8B7662;
+      /* === 功能色 === */
+      --color-success:  #7E9F7A;
+      --color-error:    #D94F4F;
+      --color-warning:  #E8A84C;
+      /* === 边框 === */
+      --color-outline:          #C4B5A2;
+      --color-outline-variant:  #D9CEBF;
+      /* === 圆角 === */
+      --radius-sm:   0.375rem;
+      --radius-md:   0.5rem;
+      --radius-lg:   0.75rem;
+      --radius-xl:   1rem;
+      --radius-2xl:  1.5rem;
+      --radius-full: 9999px;
+      /* === 阴影 === */
+      --shadow-card:   0 2px 8px rgba(49,37,27,0.08);
+      --shadow-float:  0 10px 25px rgba(49,37,27,0.10);
+      --shadow-dialog: 0 25px 50px rgba(49,37,27,0.15);
+      /* === 字体 === */
+      --font-sans: "Noto Sans SC", system-ui, sans-serif;
+    }
+  </style>
+
+  <style>
+    /* 柱状图动画 */
+    @keyframes barGrow {
+      from { width: 0; }
+      to { width: var(--bar-width); }
+    }
+    .bar-fill {
+      animation: barGrow 1s ease-out forwards;
+    }
+    /* 分数数字弹入动画 */
+    @keyframes scorePop {
+      0% { transform: scale(0.3); opacity: 0; }
+      60% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .score-animate {
+      animation: scorePop 0.6s ease-out forwards;
+    }
+    /* 表情弹入 */
+    @keyframes emojiBounce {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1.2); }
+      70% { transform: scale(0.9); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .emoji-animate {
+      animation: emojiBounce 0.8s ease-out forwards;
+    }
+    /* 状态标签淡入 */
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-slide-up {
+      animation: fadeSlideUp 0.5s ease-out forwards;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans min-h-screen">
+
+  <!-- @main-content:start -->
+  <main class="max-w-4xl mx-auto min-h-screen px-6 py-8 flex flex-col">
+
+    <!-- 顶部返回首页按钮 -->
+    <div class="mb-6">
+      <a id="btn-back-home" href="home.html" class="inline-flex items-center gap-1.5 text-sm font-medium text-on-surface-variant hover:text-primary transition-colors">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>返回首页</span>
+      </a>
+    </div>
+
+    <!-- 顶部大号AI伴侣表情 -->
+    <div class="text-center mb-4">
+      <div id="emoji-display" class="emoji-animate text-8xl leading-none select-none">😄</div>
+    </div>
+
+    <!-- 成绩展示区域 -->
+    <section class="text-center mb-8 fade-slide-up">
+      <!-- 大号分数 -->
+      <div id="score-display" class="score-animate">
+        <span id="score-number" class="text-6xl font-bold text-primary">78</span>
+        <span class="text-2xl font-semibold text-primary">分</span>
+      </div>
+
+      <!-- 状态标签 -->
+      <div class="mt-3">
+        <span id="status-badge" class="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold bg-primary-container text-primary">
+          还不错，继续加油！
+        </span>
+      </div>
+
+      <!-- AI伴侣一句话评价 -->
+      <p id="ai-comment" class="mt-4 text-base text-on-surface-variant italic">
+        "你还挺懂我的嘛，不过还有进步空间哦～"
+      </p>
+    </section>
+
+    <!-- 局后小结区域 -->
+    <section class="bg-surface rounded-xl shadow-card p-6 mb-6 fade-slide-up">
+      <h2 class="text-lg font-bold text-on-surface mb-5">你的情绪识别小结</h2>
+
+      <!-- 柱状图展示各维度得分 -->
+      <div id="dimension-chart" class="space-y-4">
+
+        <!-- 维度1：情绪信号识别 -->
+        <div class="dimension-item">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-sm font-medium text-on-surface">情绪信号识别</span>
+            <span class="text-sm font-semibold text-primary">85%</span>
+          </div>
+          <div class="w-full h-3 bg-surface-container rounded-full overflow-hidden">
+            <div class="bar-fill h-full bg-primary rounded-full" style="--bar-width: 85%;"></div>
+          </div>
+        </div>
+
+        <!-- 维度2：回应方式选择 -->
+        <div class="dimension-item">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-sm font-medium text-on-surface">回应方式选择</span>
+            <span class="text-sm font-semibold text-primary">72%</span>
+          </div>
+          <div class="w-full h-3 bg-surface-container rounded-full overflow-hidden">
+            <div class="bar-fill h-full bg-primary rounded-full" style="--bar-width: 72%;"></div>
+          </div>
+        </div>
+
+        <!-- 维度3：语气把握 -->
+        <div class="dimension-item">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-sm font-medium text-on-surface">语气把握</span>
+            <span class="text-sm font-semibold text-primary">80%</span>
+          </div>
+          <div class="w-full h-3 bg-surface-container rounded-full overflow-hidden">
+            <div class="bar-fill h-full bg-primary rounded-full" style="--bar-width: 80%;"></div>
+          </div>
+        </div>
+
+        <!-- 维度4：时机判断 -->
+        <div class="dimension-item">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-sm font-medium text-on-surface">时机判断</span>
+            <span class="text-sm font-semibold text-warning">65%</span>
+          </div>
+          <div class="w-full h-3 bg-surface-container rounded-full overflow-hidden">
+            <div class="bar-fill h-full bg-warning rounded-full" style="--bar-width: 65%;"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 薄弱环节分析 -->
+    <section class="bg-surface rounded-xl shadow-card p-6 mb-6 fade-slide-up">
+      <div class="flex items-start gap-3">
+        <div class="shrink-0 w-8 h-8 rounded-full bg-warning/15 flex items-center justify-center mt-0.5">
+          <i data-lucide="alert-triangle" class="w-4 h-4 text-warning"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-on-surface mb-1">薄弱环节</h3>
+          <p id="weakness-analysis" class="text-sm text-on-surface-variant leading-relaxed">
+            你在「沉默型生气」场景中容易踩雷，对方沉默时往往不是需要空间，而是希望你主动关心。时机判断是你的最大短板，容易在对方情绪最高点做出回应，而不是等到情绪稍缓再沟通。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 改善建议 -->
+    <section class="bg-surface rounded-xl shadow-card p-6 mb-8 fade-slide-up">
+      <div class="flex items-start gap-3">
+        <div class="shrink-0 w-8 h-8 rounded-full bg-success/15 flex items-center justify-center mt-0.5">
+          <i data-lucide="lightbulb" class="w-4 h-4 text-success"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-on-surface mb-1">改善建议</h3>
+          <p id="improvement-tip" class="text-sm text-on-surface-variant leading-relaxed">
+            下次对方沉默时，试着先给一个拥抱，而不是追问"怎么了"。等待3-5秒后再轻声表达你的关心，给对方一个缓冲的空间。记住：有时候陪伴比言语更有力量。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 底部操作按钮区域 -->
+    <section class="flex flex-col sm:flex-row gap-3 mb-6">
+      <button id="btn-replay" class="flex-1 bg-primary text-on-primary px-6 py-3 rounded-lg text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2">
+        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+        再玩一次
+      </button>
+      <button id="btn-change-scenario" class="flex-1 bg-surface-container text-on-surface px-6 py-3 rounded-lg text-sm font-semibold hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2">
+        <i data-lucide="layout-grid" class="w-4 h-4"></i>
+        换个场景
+      </button>
+    </section>
+
+    <!-- 分享提示 -->
+    <p id="share-hint" class="text-center text-sm text-on-surface-variant mb-8">
+      分享给朋友，看看TA能得几分
+    </p>
+
+  </main>
+  <!-- @main-content:end -->
+
+  <script>
+    $(function () {
+
+      // "再玩一次"按钮 - 跳转首页重新开始
+      $('#btn-replay').on('click', function () {
+        window.location.href = 'home.html';
+      });
+
+      // "换个场景"按钮 - 跳转场景选择页
+      $('#btn-change-scenario').on('click', function () {
+        window.location.href = 'scenarios.html';
+      });
+
+      // 返回首页
+      $('#btn-back-home').on('click', function (e) {
+        e.preventDefault();
+        window.location.href = 'home.html';
+      });
+
+    });
+  </script>
+
+  <script>lucide.createIcons();</script>
+</body>
+
+</html>

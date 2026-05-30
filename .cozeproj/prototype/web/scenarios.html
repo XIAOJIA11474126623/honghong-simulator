@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色 === */
+      --color-primary:              #C96F3D;
+      --color-primary-container:    #F5E0D0;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面 === */
+      --color-background:                 #FBF3E7;
+      --color-surface-container-lowest:   #FFF9F1;
+      --color-surface:                    #FFF9F1;
+      --color-surface-container:          #F3E8D8;
+      --color-surface-container-high:     #EDDFCF;
+      --color-surface-container-highest:  #E6D5C0;
+      /* === 文字 === */
+      --color-on-surface:           #31251B;
+      --color-on-surface-variant:   #8B7662;
+      /* === 功能色 === */
+      --color-success:  #7E9F7A;
+      --color-error:    #D94F4F;
+      --color-warning:  #E8A84C;
+      /* === 边框 === */
+      --color-outline:          #C4B5A2;
+      --color-outline-variant:  #D9CEBF;
+      /* === 圆角 === */
+      --radius-sm:   0.375rem;
+      --radius-md:   0.5rem;
+      --radius-lg:   0.75rem;
+      --radius-xl:   1rem;
+      --radius-2xl:  1.5rem;
+      --radius-full: 9999px;
+      /* === 阴影 === */
+      --shadow-card:   0 2px 8px rgba(49,37,27,0.08);
+      --shadow-float:  0 10px 25px rgba(49,37,27,0.10);
+      --shadow-dialog: 0 25px 50px rgba(49,37,27,0.15);
+      /* === 字体 === */
+      --font-sans: "Noto Sans SC", system-ui, sans-serif;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <!-- @nav:start -->
+  <header class="bg-surface sticky top-0 z-40 h-14 flex items-center justify-between px-6 shadow-card">
+    <div class="max-w-4xl mx-auto w-full flex items-center justify-between">
+      <a href="home.html" class="flex items-center gap-2">
+        <i data-lucide="heart" class="text-primary w-5 h-5"></i>
+        <span class="font-bold text-lg text-on-surface">哄哄模拟器</span>
+      </a>
+      <nav class="flex items-center gap-1">
+        <a href="home.html" class="px-3 py-1.5 text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-md transition-colors">首页</a>
+        <a href="scenarios.html" class="px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 rounded-md" aria-current="page">场景选择</a>
+      </nav>
+    </div>
+  </header>
+  <!-- @nav:end -->
+
+  <!-- @main-content:start -->
+  <main class="max-w-4xl mx-auto min-h-[calc(100vh-3.5rem)] p-6 pb-28">
+
+    <!-- 当前角色提示 -->
+    <div id="role-banner" class="bg-surface rounded-xl shadow-card p-4 mb-8 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
+          <i data-lucide="user" class="w-5 h-5 text-primary"></i>
+        </div>
+        <div>
+          <p class="text-sm text-on-surface-variant">你选择了</p>
+          <p id="role-name" class="text-base font-semibold text-on-surface">男朋友</p>
+        </div>
+      </div>
+      <a href="home.html" id="btn-change-role" class="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1 transition-colors">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+        重新选择
+      </a>
+    </div>
+
+    <!-- 页面标题区 -->
+    <div class="mb-8">
+      <h1 class="text-2xl font-bold text-on-surface">选择一个场景</h1>
+      <p class="text-sm text-on-surface-variant mt-1">以下哪些场景让你感到头疼？</p>
+    </div>
+
+    <!-- 场景卡片网格 -->
+    <div id="scenario-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+
+      <!-- 列表-场景1 -->
+      <div class="scenario-card bg-surface rounded-xl shadow-card p-4 cursor-pointer border-2 border-transparent hover:shadow-float transition-all duration-200" data-scenario-id="1" id="scenario-1">
+        <span class="text-xs font-bold text-primary/60 tracking-wider">01</span>
+        <h3 class="text-sm font-semibold text-on-surface mt-2 leading-snug">她让你倒水你没动</h3>
+        <p class="text-xs text-on-surface-variant mt-1.5 leading-relaxed">她说口渴让你帮忙倒杯水，你嘴上答应却一直没动，她觉得你根本没把她的话放心上</p>
+      </div>
+
+      <!-- 列表-场景2 -->
+      <div class="scenario-card bg-surface rounded-xl shadow-card p-4 cursor-pointer border-2 border-transparent hover:shadow-float transition-all duration-200" data-scenario-id="2" id="scenario-2">
+        <span class="text-xs font-bold text-primary/60 tracking-wider">02</span>
+        <h3 class="text-sm font-semibold text-on-surface mt-2 leading-snug">她说"没事"但明显不高兴</h3>
+        <p class="text-xs text-on-surface-variant mt-1.5 leading-relaxed">问怎么了只回"没事"，但语气冷淡、表情写着不开心，你得自己猜哪里惹到她了</p>
+      </div>
+
+      <!-- 列表-场景3 -->
+      <div class="scenario-card bg-surface rounded-xl shadow-card p-4 cursor-pointer border-2 border-transparent hover:shadow-float transition-all duration-200" data-scenario-id="3" id="scenario-3">
+        <span class="text-xs font-bold text-primary/60 tracking-wider">03</span>
+        <h3 class="text-sm font-semibold text-on-surface mt-2 leading-snug">她突然沉默不理你</h3>
+        <p class="text-xs text-on-surface-variant mt-1.5 leading-relaxed">上一秒还好好的，下一秒就不说话了，你完全不知道发生了什么，空气突然凝固</p>
+      </div>
+
+      <!-- 列表-场景4 -->
+      <div class="scenario-card bg-surface rounded-xl shadow-card p-4 cursor-pointer border-2 border-transparent hover:shadow-float transition-all duration-200" data-scenario-id="4" id="scenario-4">
+        <span class="text-xs font-bold text-primary/60 tracking-wider">04</span>
+        <h3 class="text-sm font-semibold text-on-surface mt-2 leading-snug">她翻旧账了</h3>
+        <p class="text-xs text-on-surface-variant mt-1.5 leading-relaxed">明明在说今天的事，她突然提起三个月前那件你已经道歉过的事，越说越委屈</p>
+      </div>
+
+      <!-- 列表-场景5 -->
+      <div class="scenario-card bg-surface rounded-xl shadow-card p-4 cursor-pointer border-2 border-transparent hover:shadow-float transition-all duration-200" data-scenario-id="5" id="scenario-5">
+        <span class="text-xs font-bold text-primary/60 tracking-wider">05</span>
+        <h3 class="text-sm font-semibold text-on-surface mt-2 leading-snug">她说"你根本不在乎我"</h3>
+        <p class="text-xs text-on-surface-variant mt-1.5 leading-relaxed">这句话像一把刀扎过来，你觉得冤枉但又不知怎么反驳，情绪直接崩了</p>
+      </div>
+
+      <!-- 列表-场景6 -->
+      <div class="scenario-card bg-surface rounded-xl shadow-card p-4 cursor-pointer border-2 border-transparent hover:shadow-float transition-all duration-200" data-scenario-id="6" id="scenario-6">
+        <span class="text-xs font-bold text-primary/60 tracking-wider">06</span>
+        <h3 class="text-sm font-semibold text-on-surface mt-2 leading-snug">她嫌弃你送的礼物</h3>
+        <p class="text-xs text-on-surface-variant mt-1.5 leading-relaxed">精心挑选的礼物她打开后表情一沉，说"你真的了解我吗"，你的心也跟着凉了</p>
+      </div>
+
+      <!-- 列表-场景7 -->
+      <div class="scenario-card bg-surface rounded-xl shadow-card p-4 cursor-pointer border-2 border-transparent hover:shadow-float transition-all duration-200" data-scenario-id="7" id="scenario-7">
+        <span class="text-xs font-bold text-primary/60 tracking-wider">07</span>
+        <h3 class="text-sm font-semibold text-on-surface mt-2 leading-snug">她看到你和异性聊天</h3>
+        <p class="text-xs text-on-surface-variant mt-1.5 leading-relaxed">只是正常同事交流，但她看到后脸色变了，觉得你跟别人聊得比跟她还开心</p>
+      </div>
+
+      <!-- 列表-场景8 -->
+      <div class="scenario-card bg-surface rounded-xl shadow-card p-4 cursor-pointer border-2 border-transparent hover:shadow-float transition-all duration-200" data-scenario-id="8" id="scenario-8">
+        <span class="text-xs font-bold text-primary/60 tracking-wider">08</span>
+        <h3 class="text-sm font-semibold text-on-surface mt-2 leading-snug">她说"随便"但不是随便</h3>
+        <p class="text-xs text-on-surface-variant mt-1.5 leading-relaxed">问吃什么说"随便"，你提的每个选项都被否，这不是随便这是考验</p>
+      </div>
+
+      <!-- 列表-场景9 -->
+      <div class="scenario-card bg-surface rounded-xl shadow-card p-4 cursor-pointer border-2 border-transparent hover:shadow-float transition-all duration-200" data-scenario-id="9" id="scenario-9">
+        <span class="text-xs font-bold text-primary/60 tracking-wider">09</span>
+        <h3 class="text-sm font-semibold text-on-surface mt-2 leading-snug">她闺蜜男朋友比你浪漫</h3>
+        <p class="text-xs text-on-surface-variant mt-1.5 leading-relaxed">闺蜜的男朋友又制造惊喜了，她看完手机后的那个眼神让你压力山大</p>
+      </div>
+
+      <!-- 列表-场景10 -->
+      <div class="scenario-card bg-surface rounded-xl shadow-card p-4 cursor-pointer border-2 border-transparent hover:shadow-float transition-all duration-200" data-scenario-id="10" id="scenario-10">
+        <span class="text-xs font-bold text-primary/60 tracking-wider">10</span>
+        <h3 class="text-sm font-semibold text-on-surface mt-2 leading-snug">她生病了要你陪</h3>
+        <p class="text-xs text-on-surface-variant mt-1.5 leading-relaxed">发烧了想让你在身边，你说忙完就来，她觉得你永远把别的事排在她前面</p>
+      </div>
+
+      <!-- 列表-场景11 -->
+      <div class="scenario-card bg-surface rounded-xl shadow-card p-4 cursor-pointer border-2 border-transparent hover:shadow-float transition-all duration-200" data-scenario-id="11" id="scenario-11">
+        <span class="text-xs font-bold text-primary/60 tracking-wider">11</span>
+        <h3 class="text-sm font-semibold text-on-surface mt-2 leading-snug">她觉得你不懂她</h3>
+        <p class="text-xs text-on-surface-variant mt-1.5 leading-relaxed">她说了一大堆心事，你的回应让她觉得你根本没听进去，"你从来就不理解我"</p>
+      </div>
+
+      <!-- 列表-场景12 -->
+      <div class="scenario-card bg-surface rounded-xl shadow-card p-4 cursor-pointer border-2 border-transparent hover:shadow-float transition-all duration-200" data-scenario-id="12" id="scenario-12">
+        <span class="text-xs font-bold text-primary/60 tracking-wider">12</span>
+        <h3 class="text-sm font-semibold text-on-surface mt-2 leading-snug">她觉得你只顾工作不陪她</h3>
+        <p class="text-xs text-on-surface-variant mt-1.5 leading-relaxed">又一个周末加班，她一个人在家等你，等你回来她已经不想跟你说话了</p>
+      </div>
+
+      <!-- 列表-场景13 -->
+      <div class="scenario-card bg-surface rounded-xl shadow-card p-4 cursor-pointer border-2 border-transparent hover:shadow-float transition-all duration-200" data-scenario-id="13" id="scenario-13">
+        <span class="text-xs font-bold text-primary/60 tracking-wider">13</span>
+        <h3 class="text-sm font-semibold text-on-surface mt-2 leading-snug">她跟你妈有矛盾</h3>
+        <p class="text-xs text-on-surface-variant mt-1.5 leading-relaxed">婆媳问题升级了，她觉得你不站在她那边，你夹在中间两头不是人</p>
+      </div>
+
+      <!-- 列表-场景14 -->
+      <div class="scenario-card bg-surface rounded-xl shadow-card p-4 cursor-pointer border-2 border-transparent hover:shadow-float transition-all duration-200" data-scenario-id="14" id="scenario-14">
+        <span class="text-xs font-bold text-primary/60 tracking-wider">14</span>
+        <h3 class="text-sm font-semibold text-on-surface mt-2 leading-snug">她说你变了不如以前</h3>
+        <p class="text-xs text-on-surface-variant mt-1.5 leading-relaxed">追我的时候怎样怎样，现在又怎样怎样，你觉得委屈但又无力反驳</p>
+      </div>
+
+      <!-- 列表-场景15 -->
+      <div class="scenario-card bg-surface rounded-xl shadow-card p-4 cursor-pointer border-2 border-transparent hover:shadow-float transition-all duration-200" data-scenario-id="15" id="scenario-15">
+        <span class="text-xs font-bold text-primary/60 tracking-wider">15</span>
+        <h3 class="text-sm font-semibold text-on-surface mt-2 leading-snug">她想让你夸她你没反应</h3>
+        <p class="text-xs text-on-surface-variant mt-1.5 leading-relaxed">换了新发型、穿了新衣服，满心期待你的注意，你却头都没抬一下</p>
+      </div>
+
+    </div>
+
+    <!-- 底部固定操作栏 -->
+    <div id="bottom-bar" class="fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur-sm border-t border-outline-variant/20 py-4 px-6 z-50">
+      <div class="max-w-4xl mx-auto flex items-center justify-between">
+        <p id="selection-hint" class="text-sm text-on-surface-variant">请选择一个场景</p>
+        <button id="btn-start" disabled
+          class="bg-surface-container-high text-on-surface-variant px-6 py-2.5 rounded-lg text-sm font-medium
+                 cursor-not-allowed transition-all duration-200 inline-flex items-center gap-2">
+          <i data-lucide="play" class="w-4 h-4"></i>
+          开始闯关
+        </button>
+      </div>
+    </div>
+
+  </main>
+  <!-- @main-content:end -->
+
+  <script>
+    $(function () {
+      var selectedScenarioId = null;
+
+      // 场景卡片点击 - 选中/切换场景
+      $('#scenario-grid').on('click', '.scenario-card', function () {
+        var $card = $(this);
+        var scenarioId = $card.data('scenario-id');
+
+        // 取消之前的选中
+        $('.scenario-card').removeClass('border-primary').addClass('border-transparent');
+        // 选中当前
+        $card.removeClass('border-transparent').addClass('border-primary');
+        selectedScenarioId = scenarioId;
+
+        // 更新提示文案
+        var title = $card.find('h3').text();
+        $('#selection-hint').text('已选择：' + title);
+
+        // 启用按钮
+        var $btn = $('#btn-start');
+        $btn.prop('disabled', false)
+            .removeClass('bg-surface-container-high text-on-surface-variant cursor-not-allowed')
+            .addClass('bg-primary text-on-primary hover:opacity-90 active:scale-[0.98] cursor-pointer');
+      });
+
+      // 开始闯关按钮 - 跳转到游戏页面
+      $('#btn-start').on('click', function () {
+        if (!selectedScenarioId) return;
+        window.location.href = 'game.html?scenario=' + selectedScenarioId;
+      });
+    });
+  </script>
+
+  <script>lucide.createIcons();</script>
+</body>
+
+</html>

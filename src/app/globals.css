@@ -1,0 +1,86 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* === 品牌色（来自原型） === */
+  --color-primary: #C96F3D;
+  --color-primary-container: #F5E0D0;
+  --color-primary-foreground: #ffffff;
+  /* === 背景 / 表面（来自原型） === */
+  --color-background: #FBF3E7;
+  --color-surface-container-lowest: #FFF9F1;
+  --color-card: #FFF9F1;
+  --color-surface-container: #F3E8D8;
+  --color-surface-container-high: #EDDFCF;
+  --color-surface-container-highest: #E6D5C0;
+  /* === 文字（来自原型） === */
+  --color-foreground: #31251B;
+  --color-muted-foreground: #8B7662;
+  /* === 功能色（来自原型） === */
+  --color-success: #7E9F7A;
+  --color-destructive: #D94F4F;
+  --color-warning: #E8A84C;
+  /* === 边框（来自原型） === */
+  --color-border: #C4B5A2;
+  --color-input: #D9CEBF;
+  --color-ring: #C96F3D;
+  /* === 二级色 === */
+  --color-secondary: #F3E8D8;
+  --color-secondary-foreground: #31251B;
+  --color-muted: #F3E8D8;
+  --color-accent: #F5E0D0;
+  --color-accent-foreground: #31251B;
+  --color-popover: #FFF9F1;
+  --color-popover-foreground: #31251B;
+  /* === 圆角（来自原型） === */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+  --radius-4xl: 2.5rem;
+  --radius-full: 9999px;
+  /* === 阴影（来自原型） === */
+  --shadow-card: 0 2px 8px rgba(49,37,27,0.08);
+  --shadow-float: 0 10px 25px rgba(49,37,27,0.10);
+  --shadow-dialog: 0 25px 50px rgba(49,37,27,0.15);
+  /* === 字体（来自原型） === */
+  --font-sans: "Noto Sans SC", system-ui, sans-serif;
+  --font-serif: "Noto Serif SC", "Songti SC", "SimSun", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  /* === 图表色 === */
+  --color-chart-1: #C96F3D;
+  --color-chart-2: #7E9F7A;
+  --color-chart-3: #E8A84C;
+  --color-chart-4: #D94F4F;
+  --color-chart-5: #8B7662;
+  /* === 侧边栏 === */
+  --color-sidebar-ring: #C96F3D;
+  --color-sidebar-border: #D9CEBF;
+  --color-sidebar-accent-foreground: #31251B;
+  --color-sidebar-accent: #F5E0D0;
+  --color-sidebar-primary-foreground: #ffffff;
+  --color-sidebar-primary: #C96F3D;
+  --color-sidebar-foreground: #31251B;
+  --color-sidebar: #FFF9F1;
+}
+
+:root {
+  --radius: 0.75rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+body {
+  @apply font-sans;
+}
