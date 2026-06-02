@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
+import { createAIProvider } from '@/lib/ai/provider-factory';
 
 interface QuestionResult {
   id: number;
@@ -54,9 +54,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const customHeaders = HeaderUtils.extractForwardHeaders(request.headers);
-    const config = new Config({ timeout: 120000 });
-    const client = new LLMClient(config, customHeaders);
+    const provider = createAIProvider();
 
     const partnerLabel = role === 'boyfriend' ? '女朋友' : '男朋友';
 
@@ -90,12 +88,11 @@ export async function POST(request: NextRequest) {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const response = await client.invoke(messages, {
+        const result = await provider.invoke(messages, {
           model: 'doubao-seed-2-0-pro-260215',
-          temperature: 0.7,
         });
 
-        const parsed = tryParseJSON(response.content);
+        const parsed = tryParseJSON(result.content);
         if (parsed && parsed.dimensions) {
           summaryData = parsed;
           break;

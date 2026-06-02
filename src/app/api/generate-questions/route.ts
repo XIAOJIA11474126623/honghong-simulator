@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { LLMClient, Config, HeaderUtils } from 'coze-coding-dev-sdk';
 import type { NextRequest } from 'next/server';
+import { createAIProvider } from '@/lib/ai/provider-factory';
 
 const SYSTEM_PROMPT = `你是一个恋爱场景出题专家。用户给你一个吵架场景，你生成指定数量的选择题。
 
@@ -30,14 +30,14 @@ const FALLBACK_OPTIONS = [
 ];
 
 async function generateQuestionsWithAI(
-  client: LLMClient,
+  provider: ReturnType<typeof createAIProvider>,
   systemPrompt: string,
   userPrompt: string,
   maxRetries = 2,
 ): Promise<{ id: number; situation: string; question: string; options: typeof FALLBACK_OPTIONS; aiReaction: { high: string; medium: string; low: string } }[]> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      const res = await client.invoke(
+      const result = await provider.invoke(
         [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
@@ -45,7 +45,7 @@ async function generateQuestionsWithAI(
         { model: 'doubao-seed-2-0-lite-260215' },
       );
 
-      const content = res.content;
+      const content = result.content;
       if (!content) continue;
 
       const questions = extractQuestions(content);
@@ -174,9 +174,7 @@ export async function POST(request: NextRequest) {
     const scenario = body.scenario as string;
     const batch = body.batch as string || 'all';
 
-    const customHeaders = HeaderUtils.extractForwardHeaders(request.headers);
-    const config = new Config();
-    const client = new LLMClient(config, customHeaders);
+    const provider = createAIProvider();
 
     let startIndex = 0;
     let numQuestions = 10;
@@ -212,7 +210,7 @@ export async function POST(request: NextRequest) {
 请生成完整的10道题，场景事件逐步推进。只输出JSON。`;
     }
 
-    let questions = await generateQuestionsWithAI(client, SYSTEM_PROMPT, userPrompt);
+    let questions = await generateQuestionsWithAI(provider, SYSTEM_PROMPT, userPrompt);
 
     // Fix IDs
     questions = questions.map((q, i) => ({ ...q, id: startIndex + i + 1 }));
